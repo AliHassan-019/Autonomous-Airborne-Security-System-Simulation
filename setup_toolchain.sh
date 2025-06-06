@@ -11,12 +11,6 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting UAV Security System Toolchain Setup...${NC}"
 
-# Check if running on Ubuntu 22.04
-if [ "$(lsb_release -rs)" != "22.04" ]; then
-    echo -e "${RED}This script is designed for Ubuntu 22.04. Please use the correct version.${NC}"
-    exit 1
-fi
-
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}Please run as root or with sudo${NC}"
