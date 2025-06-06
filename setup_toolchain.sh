@@ -74,32 +74,37 @@ apt install -y \
     pkg-config \
     software-properties-common
 
-# Install CUDA and cuDNN (if NVIDIA GPU is present)
-if lspci | grep -i nvidia > /dev/null; then
-    echo -e "${YELLOW}Installing CUDA and cuDNN...${NC}"
-    # Add NVIDIA package repositories
-    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
-    mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
-    wget https://developer.download.nvidia.com/compute/cuda/12.3.1/local_installers/cuda-repo-ubuntu2204-12-3-local_12.3.1-545.23.08-1_amd64.deb
-    dpkg -i cuda-repo-ubuntu2204-12-3-local_12.3.1-545.23.08-1_amd64.deb
-    cp /var/cuda-repo-ubuntu2204-12-3-local/cuda-*-keyring.gpg /usr/share/keyrings/
-    apt update
-    apt install -y cuda
-fi
+# Install Docker
+echo -e "${YELLOW}Installing Docker...${NC}"
+# Remove old versions if they exist
+apt remove -y docker docker-engine docker.io containerd runc
 
-# Install Docker and NVIDIA Container Toolkit
-echo -e "${YELLOW}Installing Docker and NVIDIA Container Toolkit...${NC}"
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-rm get-docker.sh
+# Install prerequisites
+apt install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
 
-# Add NVIDIA Container Toolkit
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list
+# Add Docker's official GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine
 apt update
-apt install -y nvidia-docker2
-systemctl restart docker
+apt install -y docker-ce docker-ce-cli containerd.io
+
+# Add user to docker group
+usermod -aG docker $SUDO_USER
+
+# Start Docker service
+systemctl start docker
+systemctl enable docker
 
 # Install PX4
 echo -e "${YELLOW}Installing PX4...${NC}"
